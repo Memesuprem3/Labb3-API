@@ -13,7 +13,7 @@ namespace Labb3_API.Data
         }
 
         public DbSet<Person> People { get; set; }
-        public DbSet<Links> Links {  get; set; }  
+        public DbSet<Link> Links {  get; set; }  
         public DbSet<Interest> Interests { get; set; }
         
         public DbSet<PersonInterest> PersonInterests { get; set; }
@@ -37,9 +37,9 @@ namespace Labb3_API.Data
                 new PersonInterest { PersonInterestId = 3, PersonId = 2, InterestId = 1 }
             );
 
-            modelBuilder.Entity<Links>().HasData(
-                new Links { LinkId = 1, Url = "http://example.com/foto", PersonInterestId = 1 },
-                new Links { LinkId = 2, Url = "http://example.com/bergsbestigning", PersonInterestId = 2 }
+            modelBuilder.Entity<Link>().HasData(
+                new Link { LinkId = 1, Url = "http://example.com/foto", PersonInterestId = 1 },
+                new Link { LinkId = 2, Url = "http://example.com/bergsbestigning", PersonInterestId = 2 }
             );
         }
 

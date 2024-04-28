@@ -2,7 +2,7 @@
 
 namespace Labb3_API.Models
 {
-    public class Links
+    public class Link
     {
         [Key]
         public int LinkId { get; set; }
