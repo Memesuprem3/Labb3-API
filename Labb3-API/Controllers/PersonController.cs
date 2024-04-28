@@ -108,7 +108,7 @@ namespace Labb3_API.Controllers
             return NoContent();
         }
 
-        // POST: api/Person/{id}/Links
+        
         [HttpPost("{id}/Links")]
         public async Task<ActionResult> AddLinkToPerson(int id, Links link)
         {
