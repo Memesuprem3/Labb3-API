@@ -11,6 +11,6 @@ namespace Labb3_API.Models
         public int InterestId { get; set; }
         public Person Person { get; set; }
         public Interest Interest { get; set; }
-        public List<string> Links { get; set; } = new List<string>();
+        public List<Links> Links { get; set; } = new List<Links>();
     }
 }

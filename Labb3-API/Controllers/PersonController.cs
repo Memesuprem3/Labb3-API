@@ -2,6 +2,7 @@
 using Labb3_API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,21 +14,72 @@ namespace Labb3_API.Controllers
     [ApiController]
     public class PersonController : ControllerBase
     {
-        private  AppDbContext _context;
+        private readonly AppDbContext _context;
 
         public PersonController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: api/Person
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Person>>> GetPeople()
         {
-            return await _context.People.Include(p => p.PersonInterests).ThenInclude(pi => pi.Interest).ToListAsync();
+            return await _context.People.ToListAsync();
         }
 
-        // POST: api/Person
+        
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Person>> GetPerson(int id)
+        {
+            var person = await _context.People.FindAsync(id);
+
+            if (person == null)
+            {
+                return NotFound();
+            }
+
+            return person;
+        }
+
+      
+        [HttpGet("{id}/Interests")]
+        public async Task<ActionResult<IEnumerable
+<PersonInterest>>> GetPersonInterests(int id)
+        {
+            var person = await _context.People
+            .Include(p => p.PersonInterests)
+            .ThenInclude(pi => pi.Interest)
+            .FirstOrDefaultAsync(p => p.PersonId == id);
+
+            
+        if (person == null)
+            {
+                return NotFound();
+            }
+
+            return person.PersonInterests.ToList();
+        }
+
+        
+        [HttpGet("{id}/Links")]
+        public async Task<ActionResult<IEnumerable<Links>>> GetPersonLinks(int id)
+        {
+            var person = await _context.People
+                .Include(p => p.PersonInterests)
+                .ThenInclude(pi => pi.Links)
+                .FirstOrDefaultAsync(p => p.PersonId == id);
+
+            if (person == null)
+            {
+                return NotFound();
+            }
+
+            var links = person.PersonInterests.SelectMany(pi => pi.Links);
+            return links.ToList();
+        }
+
+        
         [HttpPost]
         public async Task<ActionResult<Person>> PostPerson(Person person)
         {
@@ -37,19 +89,47 @@ namespace Labb3_API.Controllers
             return CreatedAtAction("GetPerson", new { id = person.PersonId }, person);
         }
 
-        // GET: api/Person/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Person>> GetPerson(int id)
+        
+        [HttpPost("{id}/Interests/{interestId}")]
+        public async Task<ActionResult> AddInterestToPerson(int id, int interestId)
         {
-            var person = await _context.People.Include(p => p.PersonInterests).ThenInclude(pi => pi.Interest)
-                                             .FirstOrDefaultAsync(p => p.PersonId == id);
+            var person = await _context.People.FindAsync(id);
+            var interest = await _context.Interests.FindAsync(interestId);
+
+            if (person == null || interest == null)
+            {
+                return NotFound();
+            }
+
+            var personInterest = new PersonInterest { PersonId = id, InterestId = interestId };
+            _context.PersonInterests.Add(personInterest);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // POST: api/Person/{id}/Links
+        [HttpPost("{id}/Links")]
+        public async Task<ActionResult> AddLinkToPerson(int id, Links link)
+        {
+            var person = await _context.People.FindAsync(id);
 
             if (person == null)
             {
                 return NotFound();
             }
 
-            return person;
+            var personInterest = await _context.PersonInterests.FirstOrDefaultAsync(pi => pi.PersonId == id && pi.InterestId == link.PersonInterestId);
+
+            if (personInterest == null)
+            {
+                return BadRequest("PersonInterest not found.");
+            }
+
+            _context.Links.Add(link);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetPersonLinks", new { id = id }, link);
         }
-    }
+    } 
 }

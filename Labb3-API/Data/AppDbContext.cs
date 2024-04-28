@@ -13,7 +13,7 @@ namespace Labb3_API.Data
         }
 
         public DbSet<Person> People { get; set; }
-        public DbSet<Links> Link {  get; set; }  
+        public DbSet<Links> Links {  get; set; }  
         public DbSet<Interest> Interests { get; set; }
         
         public DbSet<PersonInterest> PersonInterests { get; set; }
