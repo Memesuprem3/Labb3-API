@@ -1,12 +1,7 @@
-﻿using Labb3_API.Data;
-using Labb3_API.Models;
+﻿using Labb3_API.Models;
+using Labb3_API.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 
 namespace Labb3_API.Controllers
 {
@@ -14,133 +9,64 @@ namespace Labb3_API.Controllers
     [ApiController]
     public class PersonController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private IPersonRepository _personRepository;
 
-        public PersonController(AppDbContext context)
+        public PersonController(IPersonRepository personRepository)
         {
-            _context = context;
+            _personRepository = personRepository;
         }
 
-
+        
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Person>>> GetPeople()
+        public async Task<ActionResult<IEnumerable<Person>>> GetAllPersons()
         {
-            return await _context.People.ToListAsync();
+            var persons = await _personRepository.GetAllPersons();
+            return Ok(persons);
         }
 
-
+        
         [HttpGet("{id}")]
-        public async Task<ActionResult<Person>> GetPerson(int id)
+        public async Task<ActionResult<Person>> GetPersonById(int id)
         {
-            var person = await _context.People.FindAsync(id);
-
+            var person = await _personRepository.GetPersonById(id);
             if (person == null)
             {
                 return NotFound();
             }
-
-            return person;
+            return Ok(person);
         }
 
-
-        [HttpGet("{id}/Interests")]
-        public async Task<ActionResult<IEnumerable
-<PersonInterest>>> GetPersonInterests(int id)
-        {
-            var person = await _context.People
-            .Include(p => p.PersonInterests)
-            .ThenInclude(pi => pi.Interest)
-            .FirstOrDefaultAsync(p => p.PersonId == id);
-
-
-            if (person == null)
-            {
-                return NotFound();
-            }
-
-            return person.PersonInterests.ToList();
-        }
-
-
-        [HttpGet("{id}/Link")]
-        public async Task<ActionResult<IEnumerable<Link>>> GetPersonLinks(int id)
-        {
-            var person = await _context.People
-                .Include(p => p.PersonInterests)
-                .ThenInclude(pi => pi.Links)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
-
-            if (person == null)
-            {
-                return NotFound();
-            }
-
-            var links = person.PersonInterests.SelectMany(pi => pi.Links);
-            return links.ToList();
-        }
-
-
+        
         [HttpPost]
-        public async Task<ActionResult<Person>> PostPerson(Person person)
+        public async Task<ActionResult<Person>> CreatePerson([FromBody] Person person)
         {
-            _context.People.Add(person);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetPerson", new { id = person.PersonId }, person);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var createdPerson = await _personRepository.Create(person);
+            return CreatedAtAction(nameof(GetPersonById), new { id = createdPerson.PersonId }, createdPerson);
         }
 
-        [HttpPost("{id}/interests")]
-        public async Task<ActionResult<Interest>> PostInterest(Interest interest)
+       
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePerson(int id, [FromBody] Person person)
         {
-            _context.Interests.Add(interest);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("AddIntrest", new { id = interest.PersonInterests }, interest);
-        }
-
-        [HttpPost("{id}/Link")]
-        public async Task<ActionResult> AddLinkToPerson(int id, Link link)
-        {
-            var person = await _context.People.FindAsync(id);
-
-            if (person == null)
+            if (id != person.PersonId)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            var personInterest = await _context.PersonInterests.FirstOrDefaultAsync(pi => pi.PersonId == id && pi.InterestId == link.PersonInterestId);
-
-            if (personInterest == null)
-            {
-                return BadRequest("Interest not found.");
-            }
-
-            _context.Links.Add(link);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetPersonLinks", new { id = id }, link);
-        }
-
-
-        [HttpPost("{id}/Interests/{interestId}")]
-        public async Task<ActionResult> AddInterestToPerson(int id, int interestId)
-        {
-            var person = await _context.People.FindAsync(id);
-            var interest = await _context.Interests.FindAsync(interestId);
-
-            if (person == null || interest == null)
-            {
-                return NotFound();
-            }
-
-            var personInterest = new PersonInterest { PersonId = id, InterestId = interestId };
-            _context.PersonInterests.Add(personInterest);
-            await _context.SaveChangesAsync();
-
+            await _personRepository.Update(person);
             return NoContent();
         }
 
-
         
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePerson(int id)
+        {
+            await _personRepository.Delete(id);
+            return NoContent();
+        }
     }
 }

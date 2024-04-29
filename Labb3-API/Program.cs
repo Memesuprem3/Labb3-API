@@ -1,5 +1,6 @@
 
 using Labb3_API.Data;
+using Labb3_API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -19,6 +20,12 @@ namespace Labb3_API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+            builder.Services.AddScoped<IInterestRepository, InterestRepository>();
+            builder.Services.AddScoped<ILinkRepository, LinkRepository>();
+            builder.Services.AddScoped<IPersonInterestRepository, PersonInterestRepository>();
+
 
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
